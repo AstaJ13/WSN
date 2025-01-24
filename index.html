@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WSN Dashboard</title>
+  <!-- Link to CSS File -->
+  <link rel="stylesheet" href="main.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <h1>Wireless Sensor Network Dashboard</h1>
+  
+  <div id="sensor-data">
+    <p><strong>Temperature:</strong> <span id="temperature">--</span> °C</p>
+    <p><strong>Humidity:</strong> <span id="humidity">--</span> %</p>
+    <img id="sensor-image" src="" alt="Sensor Condition" width="300" />
+  </div>
+
+  <canvas id="sensorGraph" width="400" height="200"></canvas>
+
+  <!-- Add a script for JavaScript -->
+  <script src="demo.js"></script>
+</body>
+</html>

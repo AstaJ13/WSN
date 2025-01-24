@@ -1,0 +1,45 @@
+/* Body styling */
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f4f4f4;
+  margin: 0;
+  padding: 0;
+  text-align: center;
+}
+
+/* Header styling */
+h1 {
+  background-color: #4caf50;
+  color: white;
+  padding: 15px;
+}
+
+/* Sensor Data Styling */
+#sensor-data {
+  font-size: 18px;
+  color: #333;
+  margin: 20px auto;
+  padding: 20px;
+  width: 70%;
+  border: 1px solid #ccc;
+  background-color: #fff;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+#sensor-data p {
+  margin: 10px 0;
+}
+
+#sensor-image {
+  margin-top: 15px;
+  border-radius: 8px;
+}
+
+/* Graph Canvas */
+canvas {
+  margin-top: 30px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
