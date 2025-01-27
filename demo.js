@@ -1,101 +1,92 @@
-// Include the Paho MQTT client library for real-time data retrieval.
-const brokerUrl = "ws://103.97.166.114:9001"; // Replace with your MQTT broker's WebSocket URL.
-const topic = "esp32/temperature"; // Replace with the topic for your temperature and humidity data.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart City Monitoring System</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="header">
+        <h1>SMART CITY MONITORING SYSTEM</h1>
+    </div>
+    
+    <div class="info-container">
+        <div class="info-box">
+            <h2 id="temperature">--°</h2>
+            <p>🌡️ Temperature</p>
+        </div>
+        <div class="info-box">
+            <h2 id="humidity">--%</h2>
+            <p>💧 Humidity</p>
+        </div>
+    </div>
+    
+    <div class="chart-container">
+        <canvas id="temperatureChart"></canvas>
+    </div>
 
-// Initialize MQTT client
-const client = new Paho.MQTT.Client(brokerUrl, "SmartCityMonitor");
+    <script src="https://cdn.jsdelivr.net/npm/mqtt/dist/mqtt.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Connect to WebSocket MQTT broker
+        const client = mqtt.connect('ws://103.97.166.114:9001');  // Use your WebSocket broker IP
 
-client.onConnectionLost = function (responseObject) {
-    console.error("Connection lost:", responseObject.errorMessage);
-};
-
-client.onMessageArrived = function (message) {
-    console.log("Message arrived:", message.payloadString);
-
-    try {
-        const data = JSON.parse(message.payloadString); // Assuming data comes as JSON
-        const temperature = data.temperature; // Extract temperature from message
-        const humidity = data.humidity; // Extract humidity from message
-
-        // Update values on the UI
-        document.getElementById("temperature").innerText = `${temperature.toFixed(1)}°C`;
-        document.getElementById("humidity").innerText = `${humidity.toFixed(1)}%`;
-
-        // Update chart
-        addDataToChart(temperature, humidity);
-    } catch (error) {
-        console.error("Error processing MQTT message:", error);
-    }
-};
-
-client.connect({
-    onSuccess: function () {
-        console.log("Connected to MQTT broker");
-        client.subscribe(topic);
-    },
-    onFailure: function (error) {
-        console.error("Connection failed:", error);
-    },
-});
-
-// Chart.js configuration
-const ctx = document.getElementById("temperatureChart").getContext("2d");
-const temperatureChart = new Chart(ctx, {
-    type: "line",
-    data: {
-        labels: [],
-        datasets: [
-            {
-                label: "Temperature (°C)",
+        // Create Chart.js instance
+        const ctx = document.getElementById('temperatureChart').getContext('2d');
+        const temperatureData = {
+            labels: [],
+            datasets: [{
+                label: 'Temperature (°C)',
                 data: [],
-                borderColor: "rgba(255, 99, 132, 1)",
-                backgroundColor: "rgba(255, 99, 132, 0.2)",
-                fill: true,
-            },
-            {
-                label: "Humidity (%)",
-                data: [],
-                borderColor: "rgba(54, 162, 235, 1)",
-                backgroundColor: "rgba(54, 162, 235, 0.2)",
-                fill: true,
-            },
-        ],
-    },
-    options: {
-        responsive: true,
-        scales: {
-            x: {
-                title: {
-                    display: true,
-                    text: "Timestamp",
+                borderColor: 'rgb(75, 192, 192)',
+                fill: false,
+            }]
+        };
+
+        const temperatureChart = new Chart(ctx, {
+            type: 'line',
+            data: temperatureData,
+            options: {
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'bottom',
+                    },
                 },
-            },
-            y: {
-                title: {
-                    display: true,
-                    text: "Value",
-                },
-            },
-        },
-    },
-});
+            }
+        });
 
-// Function to add data to the chart dynamically
-function addDataToChart(temperature, humidity) {
-    const now = new Date();
-    const timeString = now.toLocaleTimeString();
+        // Subscribe to MQTT topics for temperature and humidity
+        client.on('connect', function () {
+            console.log("Connected to WebSocket MQTT Broker");
+            client.subscribe('smart_city/temperature');
+            client.subscribe('smart_city/humidity');
+        });
 
-    // Add new data points
-    temperatureChart.data.labels.push(timeString);
-    temperatureChart.data.datasets[0].data.push(temperature);
-    temperatureChart.data.datasets[1].data.push(humidity);
+        // Handle incoming MQTT messages
+        client.on('message', function (topic, message) {
+            if (topic === 'smart_city/temperature') {
+                const temperature = message.toString();
+                document.getElementById('temperature').textContent = `${temperature}°`;
+                
+                // Update chart data
+                const currentTime = Date.now();
+                temperatureData.labels.push(currentTime);
+                temperatureData.datasets[0].data.push(temperature);
+                temperatureChart.update();
+            }
 
-    // Limit the number of points displayed
-    if (temperatureChart.data.labels.length > 20) {
-        temperatureChart.data.labels.shift();
-        temperatureChart.data.datasets[0].data.shift();
-        temperatureChart.data.datasets[1].data.shift();
-    }
+            if (topic === 'smart_city/humidity') {
+                const humidity = message.toString();
+                document.getElementById('humidity').textContent = `${humidity}%`;
+            }
+        });
 
-    temperatureChart.update();
-}
+        // Handle WebSocket connection errors
+        client.on('error', function (err) {
+            console.error("Error connecting to MQTT broker:", err);
+        });
+    </script>
+</body>
+</html>
