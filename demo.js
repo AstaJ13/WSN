@@ -1,5 +1,5 @@
 // Include the Paho MQTT client library for real-time data retrieval.
-const brokerUrl = "ws://172.25.31.26:9001"; // Replace with your MQTT broker's WebSocket URL.
+const brokerUrl = "ws://103.97.166.114:9001"; // Replace with your MQTT broker's WebSocket URL.
 const topic = "esp32/temperature"; // Replace with the topic for your temperature and humidity data.
 
 // Initialize MQTT client
