@@ -1,92 +1,106 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart City Monitoring System</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <div class="header">
-        <h1>SMART CITY MONITORING SYSTEM</h1>
-    </div>
-    
-    <div class="info-container">
-        <div class="info-box">
-            <h2 id="temperature">--°</h2>
-            <p>🌡️ Temperature</p>
-        </div>
-        <div class="info-box">
-            <h2 id="humidity">--%</h2>
-            <p>💧 Humidity</p>
-        </div>
-    </div>
-    
-    <div class="chart-container">
-        <canvas id="temperatureChart"></canvas>
-    </div>
+// Import necessary Firebase modules
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
+import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
 
-    <script src="https://cdn.jsdelivr.net/npm/mqtt/dist/mqtt.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script>
-        // Connect to WebSocket MQTT broker
-        const client = mqtt.connect('ws://103.97.166.114:9001');  // Use your WebSocket broker IP
+// Firebase configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyAdNLlFOlIKreOnWjbMmLR-nRmII_LagLU", 
+    authDomain: "wirless-sensor-network.firebaseapp.com",
+    databaseURL: "https://wirless-sensor-network-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "wirless-sensor-network",
+    storageBucket: "wirless-sensor-network.appspot.com",
+    messagingSenderId: "186999672140",
+    appId: "1:186999672140:web:94af4274408dea2672d3e9"
+};
 
-        // Create Chart.js instance
-        const ctx = document.getElementById('temperatureChart').getContext('2d');
-        const temperatureData = {
-            labels: [],
-            datasets: [{
-                label: 'Temperature (°C)',
-                data: [],
-                borderColor: 'rgb(75, 192, 192)',
-                fill: false,
-            }]
-        };
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
 
-        const temperatureChart = new Chart(ctx, {
-            type: 'line',
-            data: temperatureData,
-            options: {
-                scales: {
-                    x: {
-                        type: 'linear',
-                        position: 'bottom',
-                    },
+// Get references to UI elements
+const temperatureEl = document.getElementById("temperature");
+const humidityEl = document.getElementById("humidity");
+
+// Chart.js configuration
+const ctx = document.getElementById("temperatureChart").getContext("2d");
+let labels = [];
+let temperatureData = [];
+let humidityData = [];
+
+const temperatureChart = new Chart(ctx, {
+    type: "line",
+    data: {
+        labels: labels,
+        datasets: [
+            {
+                label: "Temperature (°C)",
+                data: temperatureData,
+                borderColor: "rgba(255, 99, 132, 1)",
+                backgroundColor: "rgba(255, 99, 132, 0.2)",
+                fill: true,
+            },
+            {
+                label: "Humidity (%)",
+                data: humidityData,
+                borderColor: "rgba(54, 162, 235, 1)",
+                backgroundColor: "rgba(54, 162, 235, 0.2)",
+                fill: true,
+            },
+        ],
+    },
+    options: {
+        responsive: true,
+        scales: {
+            x: {
+                title: {
+                    display: true,
+                    text: "Time",
                 },
-            }
-        });
+            },
+            y: {
+                title: {
+                    display: true,
+                    text: "Value",
+                },
+            },
+        },
+    },
+});
 
-        // Subscribe to MQTT topics for temperature and humidity
-        client.on('connect', function () {
-            console.log("Connected to WebSocket MQTT Broker");
-            client.subscribe('smart_city/temperature');
-            client.subscribe('smart_city/humidity');
-        });
+// Function to update the chart dynamically
+function updateChart(timestamp, temperature, humidity) {
+    labels.push(timestamp);
+    temperatureData.push(temperature);
+    humidityData.push(humidity);
 
-        // Handle incoming MQTT messages
-        client.on('message', function (topic, message) {
-            if (topic === 'smart_city/temperature') {
-                const temperature = message.toString();
-                document.getElementById('temperature').textContent = `${temperature}°`;
-                
-                // Update chart data
-                const currentTime = Date.now();
-                temperatureData.labels.push(currentTime);
-                temperatureData.datasets[0].data.push(temperature);
-                temperatureChart.update();
-            }
+    // Keep only the latest 20 values
+    if (labels.length > 20) {
+        labels.shift();
+        temperatureData.shift();
+        humidityData.shift();
+    }
 
-            if (topic === 'smart_city/humidity') {
-                const humidity = message.toString();
-                document.getElementById('humidity').textContent = `${humidity}%`;
-            }
-        });
+    temperatureChart.update();
+}
 
-        // Handle WebSocket connection errors
-        client.on('error', function (err) {
-            console.error("Error connecting to MQTT broker:", err);
-        });
-    </script>
-</body>
-</html>
+// Firebase Realtime Database listener for changes
+const sensorRef = ref(database, "/sensorData");
+onValue(sensorRef, (snapshot) => {
+    if (snapshot.exists()) {
+        const data = snapshot.val();
+        const temperature = parseFloat(data.temperature) || 0;
+        const humidity = parseFloat(data.humidity) || 0;
+        const timestamp = new Date().toLocaleTimeString();
+
+        // Update UI
+        temperatureEl.innerText = `${temperature.toFixed(1)}°C`;
+        humidityEl.innerText = `${humidity.toFixed(1)}%`;
+
+        // Update the chart
+        updateChart(timestamp, temperature, humidity);
+    } else {
+        console.warn("No data available in Firebase.");
+    }
+}, (error) => {
+    console.error("Firebase read failed:", error);
+});
