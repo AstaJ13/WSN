@@ -1,76 +1,94 @@
+/* Global Styles */
 body {
-  font-family: Arial, sans-serif;
+  font-family: "Poppins", sans-serif;
   margin: 0;
   padding: 0;
   text-align: center;
-  background-color: #f4f4f4;
+  background: linear-gradient(to right, #D7E9F7, #B0D9F7);
+  color: #2C3E50;
 }
 
-.header {
-  background-color: #0056b3;
-  color: white;
+/* Header */
+h1 {
+  background: rgba(255, 255, 255, 0.4);
+  color: #2C3E50;
   padding: 20px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-.header h1 {
   margin: 0;
   font-size: 36px;
+  font-weight: bold;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
 }
 
-.info-container {
+/* Sensor Data Containers */
+.sensor-container {
   display: flex;
   justify-content: center;
-  margin: 20px 0;
   gap: 20px;
+  margin: 20px 0;
+  flex-wrap: wrap;
 }
 
-.info-box {
-  background-color: #ffffff;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  padding: 20px;
-  width: 150px;
+.sensor-box {
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  padding: 25px;
+  width: 220px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
 }
 
-.info-box h2 {
-  font-size: 28px;
-  margin: 10px 0;
-  color: #0056b3;
+.sensor-box:hover {
+  transform: translateY(-5px);
+  background: rgba(255, 255, 255, 0.9);
 }
 
-.info-box p {
-  margin: 0;
-  font-size: 18px;
-  color: #333;
+.sensor-box h2 {
+  font-size: 20px;
+  margin-bottom: 10px;
+  color: #007BFF;
+  font-weight: bold;
 }
 
+.sensor-box p {
+  font-size: 24px;
+  font-weight: bold;
+  color: #34495E;
+}
+
+/* Chart Styling */
 .chart-container {
   margin: 30px auto;
   width: 80%;
   max-width: 700px;
-  background-color: #ffffff;
-  border: 1px solid #ddd;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.5);
   border-radius: 12px;
   padding: 20px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(8px);
 }
 
-canvas {
+#tempHumidityChart, #airQualityChart {
   width: 100%;
   height: 300px;
+  background: rgba(255, 255, 255, 0.5);
+  border-radius: 10px;
 }
 
+/* Responsive Design */
 @media (max-width: 768px) {
-  .info-container {
+  .sensor-container {
     flex-direction: column;
     gap: 15px;
   }
 
-  .info-box {
+  .sensor-box {
     width: 100%;
     max-width: 300px;
   }
