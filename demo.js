@@ -1,106 +1,139 @@
-// Import necessary Firebase modules
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js";
-import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/9.6.1/firebase-database.js";
-
-// Firebase configuration
+// Initialize Firebase
 const firebaseConfig = {
-    apiKey: "AIzaSyAdNLlFOlIKreOnWjbMmLR-nRmII_LagLU", 
+    apiKey: "AIzaSyAdNLlFOlIKreOnWjbMmLR-nRmII_LagLU",
     authDomain: "wirless-sensor-network.firebaseapp.com",
     databaseURL: "https://wirless-sensor-network-default-rtdb.asia-southeast1.firebasedatabase.app",
     projectId: "wirless-sensor-network",
     storageBucket: "wirless-sensor-network.appspot.com",
     messagingSenderId: "186999672140",
-    appId: "1:186999672140:web:94af4274408dea2672d3e9"
+    appId: "1:186999672140:web:94af4274408dea2672d3e9",
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
+firebase.initializeApp(firebaseConfig);
+const database = firebase.database();
+const sensorRef = database.ref("sensorData");
 
-// Get references to UI elements
-const temperatureEl = document.getElementById("temperature");
-const humidityEl = document.getElementById("humidity");
+document.addEventListener("DOMContentLoaded", function () {
+    const tempElement = document.getElementById("temperature");
+    const humidityElement = document.getElementById("humidity");
+    const airQualityElement = document.getElementById("airQuality");
+    const lastUpdatedElement = document.getElementById("lastUpdated");
 
-// Chart.js configuration
-const ctx = document.getElementById("temperatureChart").getContext("2d");
-let labels = [];
-let temperatureData = [];
-let humidityData = [];
+    // Chart.js Data Arrays
+    let labels = [];
+    let tempData = [];
+    let humidityData = [];
+    let airQualityData = [];
+    const maxDataPoints = 10;
 
-const temperatureChart = new Chart(ctx, {
-    type: "line",
-    data: {
-        labels: labels,
-        datasets: [
-            {
-                label: "Temperature (°C)",
-                data: temperatureData,
-                borderColor: "rgba(255, 99, 132, 1)",
-                backgroundColor: "rgba(255, 99, 132, 0.2)",
-                fill: true,
-            },
-            {
-                label: "Humidity (%)",
-                data: humidityData,
-                borderColor: "rgba(54, 162, 235, 1)",
-                backgroundColor: "rgba(54, 162, 235, 0.2)",
-                fill: true,
-            },
-        ],
-    },
-    options: {
-        responsive: true,
-        scales: {
-            x: {
-                title: {
-                    display: true,
-                    text: "Time",
+    // Initialize Charts
+    const tempHumidityCtx = document.getElementById("tempHumidityChart").getContext("2d");
+    const airQualityCtx = document.getElementById("airQualityChart").getContext("2d");
+
+    const tempHumidityChart = new Chart(tempHumidityCtx, {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: "Temperature (°C)",
+                    data: tempData,
+                    borderColor: "red",
+                    borderWidth: 2,
+                    fill: false
                 },
-            },
-            y: {
-                title: {
-                    display: true,
-                    text: "Value",
-                },
-            },
+                {
+                    label: "Humidity (%)",
+                    data: humidityData,
+                    borderColor: "blue",
+                    borderWidth: 2,
+                    fill: false
+                }
+            ]
         },
-    },
-});
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { title: { display: true, text: "Time" } },
+                y: { title: { display: true, text: "Value" } }
+            }
+        }
+    });
 
-// Function to update the chart dynamically
-function updateChart(timestamp, temperature, humidity) {
-    labels.push(timestamp);
-    temperatureData.push(temperature);
-    humidityData.push(humidity);
+    const airQualityChart = new Chart(airQualityCtx, {
+        type: "line",
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: "Air Quality (PPM)",
+                    data: airQualityData,
+                    borderColor: "green",
+                    borderWidth: 2,
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: { title: { display: true, text: "Time" } },
+                y: { title: { display: true, text: "PPM" } }
+            }
+        }
+    });
 
-    // Keep only the latest 20 values
-    if (labels.length > 20) {
-        labels.shift();
-        temperatureData.shift();
-        humidityData.shift();
+    // Function to update UI and Graphs
+    function updateUI(temperature, humidity, airQuality) {
+        tempElement.textContent = temperature !== null ? `${temperature} °C` : "-- °C";
+        humidityElement.textContent = humidity !== null ? `${humidity} %` : "-- %";
+        airQualityElement.textContent = airQuality !== null ? `${airQuality} PPM` : "-- PPM";
+        lastUpdatedElement.textContent = `Last Updated: ${new Date().toLocaleTimeString()}`;
+
+        // Update Graph Data
+        if (labels.length >= maxDataPoints) {
+            labels.shift();
+            tempData.shift();
+            humidityData.shift();
+            airQualityData.shift();
+        }
+
+        labels.push(new Date().toLocaleTimeString());
+        tempData.push(temperature);
+        humidityData.push(humidity);
+        airQualityData.push(airQuality);
+
+        tempHumidityChart.update();
+        airQualityChart.update();
     }
 
-    temperatureChart.update();
-}
+    // Listen for data updates
+    sensorRef.on("value", function (snapshot) {
+        if (snapshot.exists()) {
+            let data = snapshot.val();
+            console.log("📡 Live Data from Firebase:", data);
 
-// Firebase Realtime Database listener for changes
-const sensorRef = ref(database, "/sensorData");
-onValue(sensorRef, (snapshot) => {
-    if (snapshot.exists()) {
-        const data = snapshot.val();
-        const temperature = parseFloat(data.temperature) || 0;
-        const humidity = parseFloat(data.humidity) || 0;
-        const timestamp = new Date().toLocaleTimeString();
+            let temperature = null, humidity = null, airQuality = null;
 
-        // Update UI
-        temperatureEl.innerText = `${temperature.toFixed(1)}°C`;
-        humidityEl.innerText = `${humidity.toFixed(1)}%`;
+            if (typeof data === "number") {
+                temperature = data; // Assume it's a temperature reading
+            } else if (typeof data === "object") {
+                temperature = parseFloat(data.temperature) || null;
+                humidity = parseFloat(data.humidity) || null;
+                airQuality = parseFloat(data.airQuality) || null;
+            } else {
+                console.warn("⚠️ Invalid sensor data received. Skipping update.");
+                return;
+            }
 
-        // Update the chart
-        updateChart(timestamp, temperature, humidity);
-    } else {
-        console.warn("No data available in Firebase.");
-    }
-}, (error) => {
-    console.error("Firebase read failed:", error);
+            updateUI(temperature, humidity, airQuality);
+        } else {
+            console.warn("⚠️ No data found in Firebase.");
+        }
+    }, function (error) {
+        console.error("🔥 Firebase read error:", error);
+    });
 });
